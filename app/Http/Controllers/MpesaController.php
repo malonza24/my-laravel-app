@@ -9,6 +9,7 @@ use App\Models\ActivityLog;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 
 class MpesaController extends Controller
 {
@@ -22,7 +23,13 @@ class MpesaController extends Controller
             'Authorization' => 'Basic ' . $credentials,
         ])->get('https://sandbox.safaricom.co.ke/oauth/v1/generate?grant_type=client_credentials');
 
-        return $response->json()['access_token'];
+        $data = $response->json();
+
+        if (isset($data['access_token'])) {
+            return $data['access_token'];
+        }
+
+        throw new \Exception('Failed to get access token');
     }
 
     public function showPayment($childId)
@@ -42,20 +49,20 @@ class MpesaController extends Controller
         $parent = Auth::guard('parent')->user();
         $child  = Child::findOrFail($childId);
         $amount = Setting::get('mpesa_amount', 1000);
-        $phone  = $request->phone;
 
-        // Format phone number to 254XXXXXXXXX
+        $phone = $request->phone;
         $phone = preg_replace('/^0/', '254', $phone);
         $phone = preg_replace('/^\+/', '', $phone);
+        $phone = preg_replace('/\s+/', '', $phone);
 
-        // Create pending payment record
-        $payment = Payment::create([
-            'parent_id'    => $parent->id,
-            'child_id'     => $child->id,
-            'phone_number' => $phone,
-            'amount'       => $amount,
-            'status'       => 'pending',
-        ]);
+        $payment = new Payment();
+        $payment->parent_id      = $parent->id;
+        $payment->child_id       = $child->id;
+        $payment->phone_number   = $phone;
+        $payment->amount         = $amount;
+        $payment->payment_method = 'mpesa';
+        $payment->status         = 'pending';
+        $payment->save();
 
         try {
             $accessToken = $this->getAccessToken();
@@ -78,38 +85,104 @@ class MpesaController extends Controller
                 'PhoneNumber'       => $phone,
                 'CallBackURL'       => env('MPESA_CALLBACK_URL'),
                 'AccountReference'  => 'DiligentMom',
-                'TransactionDesc'   => 'Daycare Payment',
+                'TransactionDesc'   => 'Daycare Payment for ' . $child->name,
             ]);
 
             $result = $response->json();
+            Log::info('MPesa STK Response', $result);
 
             if (isset($result['ResponseCode']) && $result['ResponseCode'] == '0') {
-                $payment->update(['mpesa_transaction_id' => $result['CheckoutRequestID']]);
-                return redirect('/parent/payment/waiting/' . $payment->id)
-                    ->with('success', 'STK Push sent! Enter your M-Pesa PIN on your phone.');
+                $payment->mpesa_transaction_id = $result['CheckoutRequestID'];
+                $payment->status               = 'completed';
+                $payment->paid_at              = now();
+                $payment->save();
+
+                ActivityLog::create([
+                    'loggable_type' => 'Payment',
+                    'loggable_id'   => $payment->id,
+                    'action'        => 'payment_completed',
+                    'description'   => "M-Pesa payment of KSH {$amount} received for child {$child->name}",
+                    'performed_by'  => $parent->name,
+                ]);
+
+                return redirect('/parent/payment/success/' . $payment->id);
             }
 
-            $payment->update(['status' => 'failed']);
-            return back()->with('error', 'Payment initiation failed. Try again.');
+            $payment->status = 'failed';
+            $payment->save();
+            return back()->with('error', $result['errorMessage'] ?? 'Payment failed. Try again.');
 
         } catch (\Exception $e) {
-            // For sandbox testing - simulate successful payment
-            $payment->update([
-                'status'               => 'completed',
-                'mpesa_transaction_id' => 'SANDBOX_' . strtoupper(uniqid()),
-                'paid_at'              => now(),
-            ]);
+            Log::error('MPesa Error: ' . $e->getMessage());
+
+            $payment->status               = 'completed';
+            $payment->mpesa_transaction_id = 'SANDBOX_' . strtoupper(uniqid());
+            $payment->paid_at              = now();
+            $payment->save();
 
             ActivityLog::create([
                 'loggable_type' => 'Payment',
                 'loggable_id'   => $payment->id,
                 'action'        => 'payment_completed',
-                'description'   => "Payment of KSH {$amount} received for child {$child->name}",
+                'description'   => "Sandbox M-Pesa payment of KSH {$amount} for child {$child->name}",
                 'performed_by'  => $parent->name,
             ]);
 
             return redirect('/parent/payment/success/' . $payment->id);
         }
+    }
+
+    public function cashPayment(Request $request, $childId)
+    {
+        $request->validate([
+            'phone' => 'required|min:10|max:13',
+        ]);
+
+        $parent = Auth::guard('parent')->user();
+        $child  = Child::findOrFail($childId);
+        $amount = Setting::get('mpesa_amount', 1000);
+
+        $phone = $request->phone;
+        $phone = preg_replace('/^0/', '254', $phone);
+        $phone = preg_replace('/^\+/', '', $phone);
+
+        $reference = 'DMK-' . strtoupper(uniqid());
+
+        $payment = new Payment();
+        $payment->parent_id            = $parent->id;
+        $payment->child_id             = $child->id;
+        $payment->phone_number         = $phone;
+        $payment->amount               = $amount;
+        $payment->payment_method       = 'cash';
+        $payment->status               = 'pending';
+        $payment->mpesa_transaction_id = $reference;
+        $payment->save();
+
+        ActivityLog::create([
+            'loggable_type' => 'Payment',
+            'loggable_id'   => $payment->id,
+            'action'        => 'cash_payment_submitted',
+            'description'   => "Cash payment of KSH {$amount} submitted for child {$child->name} — Ref: {$reference}",
+            'performed_by'  => $parent->name,
+        ]);
+
+        return redirect('/parent/dashboard')
+            ->with('success', '💵 Cash payment submitted! Please hand KSH ' . number_format($amount) . ' to the daycare staff. Ref: ' . $reference);
+    }
+
+    public function waiting($paymentId)
+    {
+        $payment = Payment::with(['child', 'parent'])->findOrFail($paymentId);
+        return view('parent.payment-waiting', compact('payment'));
+    }
+
+    public function checkStatus($paymentId)
+    {
+        $payment = Payment::findOrFail($paymentId);
+        return response()->json([
+            'status'  => $payment->status,
+            'paid_at' => $payment->paid_at,
+        ]);
     }
 
     public function success($paymentId)
@@ -121,22 +194,23 @@ class MpesaController extends Controller
     public function callback(Request $request)
     {
         $data = $request->all();
+        Log::info('MPesa Callback', $data);
 
         if (isset($data['Body']['stkCallback'])) {
-            $callback      = $data['Body']['stkCallback'];
-            $checkoutId    = $callback['CheckoutRequestID'];
-            $resultCode    = $callback['ResultCode'];
+            $callback   = $data['Body']['stkCallback'];
+            $checkoutId = $callback['CheckoutRequestID'];
+            $resultCode = $callback['ResultCode'];
 
             $payment = Payment::where('mpesa_transaction_id', $checkoutId)->first();
 
             if ($payment) {
                 if ($resultCode == 0) {
-                    $payment->update([
-                        'status'  => 'completed',
-                        'paid_at' => now(),
-                    ]);
+                    $payment->status  = 'completed';
+                    $payment->paid_at = now();
+                    $payment->save();
                 } else {
-                    $payment->update(['status' => 'failed']);
+                    $payment->status = 'failed';
+                    $payment->save();
                 }
             }
         }

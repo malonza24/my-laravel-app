@@ -7,17 +7,21 @@ use Illuminate\Database\Eloquent\Model;
 class Payment extends Model
 {
     protected $fillable = [
-        'parent_id', 'child_id', 'mpesa_transaction_id',
-        'phone_number', 'amount', 'status', 'paid_at',
+        'parent_id',
+        'child_id',
+        'phone_number',
+        'amount',
+        'payment_method',
+        'mpesa_transaction_id',
+        'status',
+        'paid_at',
+        'decline_reason',
     ];
 
-    protected function casts(): array
-    {
-        return [
-            'paid_at' => 'datetime',
-            'amount'  => 'decimal:2',
-        ];
-    }
+    protected $casts = [
+        'paid_at' => 'datetime',
+        'amount' => 'decimal:2',
+    ];
 
     public function parent()
     {

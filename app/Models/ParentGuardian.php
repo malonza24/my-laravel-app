@@ -12,16 +12,23 @@ class ParentGuardian extends Authenticatable
     protected $table = 'parents';
 
     protected $fillable = [
-        'name', 'email', 'phone',
-        'id_number', 'password', 'status',
+        'name',
+        'email',
+        'phone',
+        'id_number',
+        'password',
+        'status',
     ];
 
-    protected $hidden = ['password', 'remember_token'];
+    protected $hidden = [
+        'password',
+        'remember_token',
+    ];
 
-    protected function casts(): array
-    {
-        return ['password' => 'hashed'];
-    }
+    protected $casts = [
+        'password' => 'hashed',
+        'email_verified_at' => 'datetime',
+    ];
 
     public function children()
     {

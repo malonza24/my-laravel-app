@@ -7,17 +7,14 @@ use App\Http\Controllers\ParentAuthController;
 use App\Http\Controllers\ParentDashboardController;
 use App\Http\Controllers\ChildController;
 use App\Http\Controllers\MpesaController;
-use App\Http\Controllers\DashboardController;
 
 // Landing page
 Route::get('/', fn() => view('landing'));
 
-// Admin auth routes
+// Admin auth routes - Login only (no public registration)
 Route::get('/admin/login', [AuthController::class, 'showLogin'])->name('login');
 Route::post('/admin/login', [AuthController::class, 'login']);
 Route::post('/admin/logout', [AuthController::class, 'logout'])->name('logout');
-Route::get('/admin/register', [AuthController::class, 'showRegister'])->name('register');
-Route::post('/admin/register', [AuthController::class, 'register']);
 
 // Admin protected routes
 Route::middleware(['auth'])->prefix('admin')->group(function () {
@@ -33,9 +30,11 @@ Route::middleware(['auth'])->prefix('admin')->group(function () {
     Route::post('/children/{id}/checkout', [AdminController::class, 'checkOut'])->name('admin.checkout');
     Route::get('/payments', [AdminController::class, 'payments'])->name('admin.payments');
     Route::post('/payments/{id}/confirm', [AdminController::class, 'confirmPayment'])->name('admin.confirm-payment');
+    Route::post('/payments/{id}/decline', [AdminController::class, 'declinePayment'])->name('admin.decline-payment');
     Route::get('/settings', [AdminController::class, 'settings'])->name('admin.settings');
     Route::post('/settings', [AdminController::class, 'updateSettings']);
     Route::get('/activity', [AdminController::class, 'activityLogs'])->name('admin.activity');
+    Route::get('/report', [AdminController::class, 'dailyReport'])->name('admin.report');
 });
 
 // Parent auth routes
@@ -53,8 +52,10 @@ Route::middleware(['auth:parent'])->group(function () {
     Route::post('/parent/child/{id}/checkout', [ChildController::class, 'checkout'])->name('child.checkout');
     Route::get('/parent/payment/{childId}', [MpesaController::class, 'showPayment'])->name('payment.show');
     Route::post('/parent/payment/{childId}', [MpesaController::class, 'initiate'])->name('payment.initiate');
+    Route::post('/parent/payment/{childId}/cash', [MpesaController::class, 'cashPayment'])->name('payment.cash');
     Route::get('/parent/payment/success/{paymentId}', [MpesaController::class, 'success'])->name('payment.success');
-    Route::get('/parent/payment/waiting/{paymentId}', fn($id) => view('parent.payment-waiting', ['paymentId' => $id]))->name('payment.waiting');
+    Route::get('/parent/payment/waiting/{paymentId}', [MpesaController::class, 'waiting'])->name('payment.waiting');
+    Route::get('/parent/payment/status/{paymentId}', [MpesaController::class, 'checkStatus'])->name('payment.status');
 });
 
 // Mpesa callback

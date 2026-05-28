@@ -119,9 +119,9 @@ class AdminController extends Controller
     public function checkIn($id)
     {
         $child = Child::findOrFail($id);
-        $child->status       = 'checked_in';
-        $child->checkin_time = now()->format('H:i:s');
-        $child->checkin_date = now()->toDateString();
+        $child->status        = 'checked_in';
+        $child->checkin_time  = now()->format('H:i:s');
+        $child->checkin_date  = now()->toDateString();
         $child->checkout_date = null;
         $child->save();
 
@@ -139,6 +139,15 @@ class AdminController extends Controller
     public function checkOut($id)
     {
         $child = Child::findOrFail($id);
+
+        $paymentCompleted = Payment::where('child_id', $child->id)
+                                ->where('status', 'completed')
+                                ->exists();
+
+        if (!$paymentCompleted) {
+            return back()->with('error', '⚠️ Cannot check out ' . $child->name . '. Payment has not been confirmed yet.');
+        }
+
         $child->status        = 'checked_out';
         $child->checkout_time = now()->format('H:i:s');
         $child->checkout_date = now()->toDateString();
@@ -163,7 +172,7 @@ class AdminController extends Controller
 
     public function confirmPayment($id)
     {
-        $payment = Payment::findOrFail($id);
+        $payment = Payment::with(['parent', 'child'])->findOrFail($id);
         $payment->status  = 'completed';
         $payment->paid_at = now();
         $payment->save();
@@ -172,11 +181,33 @@ class AdminController extends Controller
             'loggable_type' => 'Payment',
             'loggable_id'   => $payment->id,
             'action'        => 'payment_confirmed',
-            'description'   => "Payment of KSH {$payment->amount} confirmed",
+            'description'   => "Payment of KSH {$payment->amount} confirmed by admin",
             'performed_by'  => Auth::user()->name,
         ]);
 
         return back()->with('success', 'Payment confirmed successfully.');
+    }
+
+    public function declinePayment(Request $request, $id)
+    {
+        $request->validate([
+            'decline_reason' => 'required|min:3|max:200',
+        ]);
+
+        $payment = Payment::with(['parent', 'child'])->findOrFail($id);
+        $payment->status         = 'failed';
+        $payment->decline_reason = $request->decline_reason;
+        $payment->save();
+
+        ActivityLog::create([
+            'loggable_type' => 'Payment',
+            'loggable_id'   => $payment->id,
+            'action'        => 'payment_declined',
+            'description'   => "Payment of KSH {$payment->amount} declined. Reason: {$request->decline_reason}",
+            'performed_by'  => Auth::user()->name,
+        ]);
+
+        return back()->with('success', 'Payment declined successfully.');
     }
 
     public function settings()
@@ -211,5 +242,21 @@ class AdminController extends Controller
     {
         $logs = ActivityLog::latest()->paginate(20);
         return view('admin.activity-logs', compact('logs'));
+    }
+
+    public function dailyReport(Request $request)
+    {
+        $date = $request->date ?? today()->toDateString();
+
+        $checkedInToday  = Child::with('parent')->whereDate('checkin_date', $date)->get();
+        $checkedOutToday = Child::with('parent')->whereDate('checkout_date', $date)->get();
+        $currentlyIn     = Child::with('parent')->where('status', 'checked_in')->whereDate('checkin_date', $date)->get();
+        $paymentsToday   = Payment::with(['parent', 'child'])->where('status', 'completed')->whereDate('paid_at', $date)->get();
+        $totalRevenue    = $paymentsToday->sum('amount');
+
+        return view('admin.daily-report', compact(
+            'date', 'checkedInToday', 'checkedOutToday',
+            'currentlyIn', 'paymentsToday', 'totalRevenue'
+        ));
     }
 }

@@ -7,19 +7,26 @@ use Illuminate\Database\Eloquent\Model;
 class Child extends Model
 {
     protected $fillable = [
-        'parent_id', 'name', 'gender', 'age',
-        'photo', 'has_disability', 'disability_details',
-        'has_allergy', 'allergy_details',
-        'checkin_time', 'checkout_time', 'status',
+        'parent_id',
+        'name',
+        'gender',
+        'age',
+        'photo',
+        'has_disability',
+        'disability_details',
+        'has_allergy',
+        'allergy_details',
+        'checkin_time',
+        'checkin_date',
+        'checkout_time',
+        'checkout_date',
+        'status',
     ];
 
-    protected function casts(): array
-    {
-        return [
-            'has_disability' => 'boolean',
-            'has_allergy'    => 'boolean',
-        ];
-    }
+    protected $casts = [
+        'has_disability' => 'boolean',
+        'has_allergy' => 'boolean',
+    ];
 
     public function parent()
     {

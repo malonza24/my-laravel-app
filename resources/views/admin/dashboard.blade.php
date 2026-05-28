@@ -4,143 +4,360 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Dashboard - Diligent Mom</title>
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; min-height: 100vh; display: flex; }
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --secondary: #f43f5e;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --info: #3b82f6;
+            --purple: #8b5cf6;
+            --pink: #ec4899;
+            --bg: #f1f5f9;
+            --sidebar: #0f172a;
+            --white: #ffffff;
+            --text: #1e293b;
+            --text-light: #64748b;
+            --border: #e2e8f0;
+            --radius: 14px;
+            --shadow: 0 4px 24px rgba(0,0,0,0.08);
+        }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); min-height: 100vh; display: flex; }
+
+        /* SIDEBAR */
         .sidebar {
-            width: 250px;
-            background: linear-gradient(180deg, #2d3748, #1a202c);
+            width: 260px;
+            background: var(--sidebar);
             min-height: 100vh;
-            padding: 24px 0;
+            padding: 0;
             position: fixed;
             top: 0; left: 0;
+            display: flex;
+            flex-direction: column;
+            z-index: 100;
         }
-        .sidebar .brand { padding: 0 24px 24px; border-bottom: 1px solid rgba(255,255,255,0.1); margin-bottom: 16px; }
-        .sidebar .brand h2 { color: white; font-size: 18px; }
-        .sidebar .brand p { color: rgba(255,255,255,0.5); font-size: 12px; margin-top: 4px; }
-        .sidebar a {
+        .sidebar-brand {
+            padding: 24px 20px;
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+            margin-bottom: 8px;
+        }
+        .sidebar-brand .brand-logo {
             display: flex;
             align-items: center;
-            gap: 10px;
-            padding: 12px 24px;
-            color: rgba(255,255,255,0.7);
+            gap: 12px;
+        }
+        .brand-icon {
+            width: 42px;
+            height: 42px;
+            background: linear-gradient(135deg, var(--primary), var(--pink));
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+        }
+        .brand-text h2 { color: white; font-size: 16px; font-weight: 700; }
+        .brand-text p { color: rgba(255,255,255,0.4); font-size: 11px; margin-top: 2px; }
+        .nav-section { padding: 8px 12px; margin-bottom: 4px; }
+        .nav-label { font-size: 10px; color: rgba(255,255,255,0.3); text-transform: uppercase; letter-spacing: 1.5px; padding: 0 8px; margin-bottom: 6px; }
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 11px 12px;
+            border-radius: 10px;
+            color: rgba(255,255,255,0.6);
             text-decoration: none;
             font-size: 14px;
+            font-weight: 500;
             transition: all 0.2s;
+            margin-bottom: 2px;
         }
-        .sidebar a:hover, .sidebar a.active { background: rgba(255,255,255,0.1); color: white; }
-        .sidebar .logout { position: absolute; bottom: 20px; width: 100%; }
-        .sidebar .logout form button {
+        .nav-item:hover { background: rgba(255,255,255,0.08); color: white; }
+        .nav-item.active { background: linear-gradient(135deg, var(--primary), var(--primary-dark)); color: white; }
+        .nav-item .icon { width: 18px; height: 18px; flex-shrink: 0; }
+        .sidebar-footer {
+            margin-top: auto;
+            padding: 16px 12px;
+            border-top: 1px solid rgba(255,255,255,0.08);
+        }
+        .logout-btn {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 11px 12px;
+            border-radius: 10px;
+            color: rgba(255,255,255,0.6);
+            font-size: 14px;
+            font-weight: 500;
             width: 100%;
-            padding: 12px 24px;
             background: none;
             border: none;
-            color: rgba(255,255,255,0.7);
-            text-align: left;
             cursor: pointer;
-            font-size: 14px;
+            transition: all 0.2s;
         }
-        .sidebar .logout form button:hover { color: white; background: rgba(255,255,255,0.1); }
-        .main { margin-left: 250px; flex: 1; padding: 32px; }
-        .topbar { margin-bottom: 32px; }
-        .topbar h1 { font-size: 26px; color: #333; }
-        .topbar p { color: #888; font-size: 14px; margin-top: 4px; }
-        .stats {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 20px;
+        .logout-btn:hover { background: rgba(239,68,68,0.15); color: #ef4444; }
+
+        /* MAIN */
+        .main { margin-left: 260px; flex: 1; padding: 32px; }
+
+        /* TOPBAR */
+        .topbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
             margin-bottom: 32px;
         }
+        .topbar-left h1 { font-size: 24px; font-weight: 700; color: var(--text); }
+        .topbar-left p { color: var(--text-light); font-size: 14px; margin-top: 4px; }
+        .topbar-right {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .admin-badge {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: white;
+            padding: 8px 16px;
+            border-radius: 50px;
+            box-shadow: var(--shadow);
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text);
+        }
+        .admin-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary), var(--pink));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 13px;
+            font-weight: 700;
+        }
+
+        /* STATS */
+        .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 28px; }
         .stat-card {
             background: white;
-            border-radius: 12px;
+            border-radius: var(--radius);
             padding: 24px;
-            box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+            box-shadow: var(--shadow);
+            position: relative;
+            overflow: hidden;
         }
-        .stat-card .icon { font-size: 32px; margin-bottom: 12px; }
-        .stat-card .value { font-size: 28px; font-weight: 700; color: #333; }
-        .stat-card .label { font-size: 13px; color: #888; margin-top: 4px; }
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0; right: 0;
+            width: 80px;
+            height: 80px;
+            border-radius: 0 var(--radius) 0 80px;
+            opacity: 0.1;
+        }
+        .stat-card.blue::before { background: var(--info); }
+        .stat-card.green::before { background: var(--success); }
+        .stat-card.purple::before { background: var(--purple); }
+        .stat-card.orange::before { background: var(--warning); }
+        .stat-card.pink::before { background: var(--pink); }
+        .stat-card.indigo::before { background: var(--primary); }
+        .stat-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 16px;
+        }
+        .stat-icon.blue { background: #eff6ff; color: var(--info); }
+        .stat-icon.green { background: #ecfdf5; color: var(--success); }
+        .stat-icon.purple { background: #f5f3ff; color: var(--purple); }
+        .stat-icon.orange { background: #fffbeb; color: var(--warning); }
+        .stat-icon.pink { background: #fdf2f8; color: var(--pink); }
+        .stat-icon.indigo { background: #eef2ff; color: var(--primary); }
+        .stat-value { font-size: 30px; font-weight: 800; color: var(--text); }
+        .stat-label { font-size: 13px; color: var(--text-light); margin-top: 4px; font-weight: 500; }
+        .stat-sub { font-size: 11px; color: var(--text-light); margin-top: 6px; }
+
+        /* GRID */
         .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
-        .card { background: white; border-radius: 12px; padding: 24px; box-shadow: 0 2px 12px rgba(0,0,0,0.06); }
-        .card h3 { font-size: 16px; color: #333; margin-bottom: 16px; font-weight: 700; }
+        .card {
+            background: white;
+            border-radius: var(--radius);
+            padding: 24px;
+            box-shadow: var(--shadow);
+        }
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 16px;
+            border-bottom: 2px solid var(--bg);
+        }
+        .card-header h3 { font-size: 16px; font-weight: 700; color: var(--text); display: flex; align-items: center; gap: 8px; }
+        .card-header a { font-size: 13px; color: var(--primary); text-decoration: none; font-weight: 600; }
         table { width: 100%; border-collapse: collapse; }
-        th { font-size: 12px; color: #888; text-align: left; padding: 8px 0; border-bottom: 1px solid #f0f0f0; text-transform: uppercase; }
-        td { font-size: 14px; color: #333; padding: 10px 0; border-bottom: 1px solid #f8f8f8; }
-        .badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 600; }
-        .badge-active { background: #c6f6d5; color: #276749; }
-        .badge-blocked { background: #fed7d7; color: #c53030; }
-        .badge-completed { background: #c6f6d5; color: #276749; }
-        .badge-pending { background: #fefcbf; color: #744210; }
-        .view-all { display: inline-block; margin-top: 12px; font-size: 13px; color: #667eea; text-decoration: none; }
-        .today-info { font-size: 12px; color: #888; margin-top: 4px; }
+        th { font-size: 11px; color: var(--text-light); text-align: left; padding: 8px 12px; text-transform: uppercase; letter-spacing: 0.5px; background: var(--bg); border-radius: 6px; }
+        td { font-size: 14px; color: var(--text); padding: 12px; border-bottom: 1px solid var(--bg); }
+        tr:last-child td { border-bottom: none; }
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 10px;
+            border-radius: 50px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+        .badge-active { background: #ecfdf5; color: #059669; }
+        .badge-blocked { background: #fef2f2; color: #dc2626; }
+        .badge-completed { background: #ecfdf5; color: #059669; }
+        .badge-pending { background: #fffbeb; color: #d97706; }
+        .badge-failed { background: #fef2f2; color: #dc2626; }
     </style>
 </head>
 <body>
     <div class="sidebar">
-        <div class="brand">
-            <h2>⚙️ Diligent Mom</h2>
-            <p>Admin Panel</p>
+        <div class="sidebar-brand">
+            <div class="brand-logo">
+                <div class="brand-icon">
+                    <i data-lucide="heart" style="width:20px;height:20px;"></i>
+                </div>
+                <div class="brand-text">
+                    <h2>Diligent Mom</h2>
+                    <p>Admin Panel</p>
+                </div>
+            </div>
         </div>
-        <a href="/admin/dashboard" class="active">📊 Dashboard</a>
-        <a href="/admin/parents">👩 Parents</a>
-        <a href="/admin/children">👶 Children</a>
-        <a href="/admin/payments">💳 Payments</a>
-        <a href="/admin/settings">⚙️ Settings</a>
-        <a href="/admin/activity">📋 Activity Logs</a>
-        <a href="/">🏠 Home</a>
-        <div class="logout">
+
+        <div class="nav-section">
+            <div class="nav-label">Main Menu</div>
+            <a href="/admin/dashboard" class="nav-item active">
+                <i data-lucide="layout-dashboard" class="icon"></i> Dashboard
+            </a>
+            <a href="/admin/parents" class="nav-item">
+                <i data-lucide="users" class="icon"></i> Parents
+            </a>
+            <a href="/admin/children" class="nav-item">
+                <i data-lucide="baby" class="icon"></i> Children
+            </a>
+            <a href="/admin/payments" class="nav-item">
+                <i data-lucide="credit-card" class="icon"></i> Payments
+            </a>
+        </div>
+
+        <div class="nav-section">
+            <div class="nav-label">Reports & Settings</div>
+            <a href="/admin/report" class="nav-item">
+                <i data-lucide="bar-chart-2" class="icon"></i> Daily Report
+            </a>
+            <a href="/admin/activity" class="nav-item">
+                <i data-lucide="activity" class="icon"></i> Activity Logs
+            </a>
+            <a href="/admin/settings" class="nav-item">
+                <i data-lucide="settings" class="icon"></i> Settings
+            </a>
+            <a href="/" class="nav-item">
+                <i data-lucide="home" class="icon"></i> Home
+            </a>
+        </div>
+
+        <div class="sidebar-footer">
             <form action="/admin/logout" method="POST">
                 @csrf
-                <button type="submit">🚪 Logout</button>
+                <button type="submit" class="logout-btn">
+                    <i data-lucide="log-out" style="width:18px;height:18px;"></i>
+                    Logout
+                </button>
             </form>
         </div>
     </div>
 
     <div class="main">
         <div class="topbar">
-            <h1>Welcome back, {{ Auth::user()->name }}! 👋</h1>
-            <p>Here's what's happening at the daycare today — {{ now()->format('l, M d Y') }}</p>
+            <div class="topbar-left">
+                <h1>Good {{ now()->hour < 12 ? 'Morning' : (now()->hour < 17 ? 'Afternoon' : 'Evening') }}! 👋</h1>
+                <p>{{ now()->format('l, F d Y') }} — Here\'s what\'s happening today</p>
+            </div>
+            <div class="topbar-right">
+                <div class="admin-badge">
+                    <div class="admin-avatar">{{ strtoupper(substr(Auth::user()->name, 0, 1)) }}</div>
+                    {{ Auth::user()->name }}
+                </div>
+            </div>
         </div>
 
+        <!-- STATS -->
         <div class="stats">
-            <div class="stat-card">
-                <div class="icon">👩</div>
-                <div class="value">{{ $totalParents }}</div>
-                <div class="label">Total Parents</div>
+            <div class="stat-card blue">
+                <div class="stat-icon blue">
+                    <i data-lucide="users" style="width:22px;height:22px;"></i>
+                </div>
+                <div class="stat-value">{{ $totalParents }}</div>
+                <div class="stat-label">Total Parents</div>
+                <div class="stat-sub">Registered in system</div>
             </div>
-            <div class="stat-card">
-                <div class="icon">👶</div>
-                <div class="value">{{ $totalChildren }}</div>
-                <div class="label">Total Children</div>
+            <div class="stat-card green">
+                <div class="stat-icon green">
+                    <i data-lucide="baby" style="width:22px;height:22px;"></i>
+                </div>
+                <div class="stat-value">{{ $totalChildren }}</div>
+                <div class="stat-label">Total Children</div>
+                <div class="stat-sub">All registered children</div>
             </div>
-            <div class="stat-card">
-                <div class="icon">📋</div>
-                <div class="value">{{ $checkedIn }}</div>
-                <div class="label">Checked In Today</div>
-                <div class="today-info">All children who came in today</div>
+            <div class="stat-card purple">
+                <div class="stat-icon purple">
+                    <i data-lucide="clipboard-list" style="width:22px;height:22px;"></i>
+                </div>
+                <div class="stat-value">{{ $checkedIn }}</div>
+                <div class="stat-label">Checked In Today</div>
+                <div class="stat-sub">Total arrivals today</div>
             </div>
-            <div class="stat-card">
-                <div class="icon">✅</div>
-                <div class="value">{{ $currentlyIn }}</div>
-                <div class="label">Currently Inside</div>
-                <div class="today-info">Still in the daycare now</div>
+            <div class="stat-card indigo">
+                <div class="stat-icon indigo">
+                    <i data-lucide="user-check" style="width:22px;height:22px;"></i>
+                </div>
+                <div class="stat-value">{{ $currentlyIn }}</div>
+                <div class="stat-label">Currently Inside</div>
+                <div class="stat-sub">Still in daycare now</div>
             </div>
-            <div class="stat-card">
-                <div class="icon">🚪</div>
-                <div class="value">{{ $checkedOut }}</div>
-                <div class="label">Checked Out Today</div>
-                <div class="today-info">Already picked up today</div>
+            <div class="stat-card orange">
+                <div class="stat-icon orange">
+                    <i data-lucide="door-open" style="width:22px;height:22px;"></i>
+                </div>
+                <div class="stat-value">{{ $checkedOut }}</div>
+                <div class="stat-label">Checked Out Today</div>
+                <div class="stat-sub">Already picked up</div>
             </div>
-            <div class="stat-card">
-                <div class="icon">💰</div>
-                <div class="value">KSH {{ number_format($totalPayments) }}</div>
-                <div class="label">Total Payments</div>
+            <div class="stat-card pink">
+                <div class="stat-icon pink">
+                    <i data-lucide="banknote" style="width:22px;height:22px;"></i>
+                </div>
+                <div class="stat-value">KSH {{ number_format($totalPayments) }}</div>
+                <div class="stat-label">Total Revenue</div>
+                <div class="stat-sub">All confirmed payments</div>
             </div>
         </div>
 
+        <!-- TABLES -->
         <div class="grid-2">
             <div class="card">
-                <h3>Recent Parents</h3>
+                <div class="card-header">
+                    <h3>
+                        <i data-lucide="users" style="width:16px;height:16px;color:#6366f1;"></i>
+                        Recent Parents
+                    </h3>
+                    <a href="/admin/parents">View all →</a>
+                </div>
                 <table>
                     <thead>
                         <tr>
@@ -159,11 +376,16 @@
                         @endforeach
                     </tbody>
                 </table>
-                <a href="/admin/parents" class="view-all">View all parents →</a>
             </div>
 
             <div class="card">
-                <h3>Recent Payments</h3>
+                <div class="card-header">
+                    <h3>
+                        <i data-lucide="credit-card" style="width:16px;height:16px;color:#10b981;"></i>
+                        Recent Payments
+                    </h3>
+                    <a href="/admin/payments">View all →</a>
+                </div>
                 <table>
                     <thead>
                         <tr>
@@ -182,9 +404,10 @@
                         @endforeach
                     </tbody>
                 </table>
-                <a href="/admin/payments" class="view-all">View all payments →</a>
             </div>
         </div>
     </div>
+
+    <script>lucide.createIcons();</script>
 </body>
 </html>

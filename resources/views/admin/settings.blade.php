@@ -3,73 +3,117 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Settings - Diligent Mom Admin</title>
+    <title>Settings - Diligent Mom</title>
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; min-height: 100vh; display: flex; }
-        .sidebar { width: 250px; background: linear-gradient(180deg, #2d3748, #1a202c); min-height: 100vh; padding: 24px 0; position: fixed; top: 0; left: 0; }
-        .sidebar .brand { padding: 0 24px 24px; border-bottom: 1px solid rgba(255,255,255,0.1); margin-bottom: 16px; }
-        .sidebar .brand h2 { color: white; font-size: 18px; }
-        .sidebar .brand p { color: rgba(255,255,255,0.5); font-size: 12px; margin-top: 4px; }
-        .sidebar a { display: flex; align-items: center; gap: 10px; padding: 12px 24px; color: rgba(255,255,255,0.7); text-decoration: none; font-size: 14px; }
-        .sidebar a:hover, .sidebar a.active { background: rgba(255,255,255,0.1); color: white; }
-        .sidebar .logout { position: absolute; bottom: 20px; width: 100%; }
-        .sidebar .logout form button { width: 100%; padding: 12px 24px; background: none; border: none; color: rgba(255,255,255,0.7); text-align: left; cursor: pointer; font-size: 14px; }
-        .main { margin-left: 250px; flex: 1; padding: 32px; }
-        .topbar { margin-bottom: 24px; }
-        .topbar h1 { font-size: 24px; color: #333; }
-        .card { background: white; border-radius: 12px; padding: 32px; box-shadow: 0 2px 12px rgba(0,0,0,0.06); max-width: 500px; }
-        label { display: block; font-size: 13px; color: #555; margin-bottom: 6px; font-weight: 600; }
-        input { width: 100%; padding: 12px 14px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 15px; outline: none; margin-bottom: 20px; }
-        input:focus { border-color: #2d3748; }
-        button { padding: 12px 28px; background: linear-gradient(135deg, #2d3748, #1a202c); color: white; border: none; border-radius: 8px; font-size: 15px; cursor: pointer; }
-        .success { background: #c6f6d5; color: #276749; padding: 12px 16px; border-radius: 8px; margin-bottom: 20px; font-size: 14px; }
-        .info { font-size: 12px; color: #888; margin-top: -16px; margin-bottom: 16px; }
+        :root { --primary: #6366f1; --primary-dark: #4f46e5; --bg: #f1f5f9; --sidebar: #0f172a; --text: #1e293b; --text-light: #64748b; --border: #e2e8f0; --radius: 14px; --shadow: 0 4px 24px rgba(0,0,0,0.08); }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); min-height: 100vh; display: flex; }
+        .sidebar { width: 260px; background: var(--sidebar); min-height: 100vh; position: fixed; top: 0; left: 0; display: flex; flex-direction: column; z-index: 100; }
+        .sidebar-brand { padding: 24px 20px; border-bottom: 1px solid rgba(255,255,255,0.08); margin-bottom: 8px; }
+        .brand-logo { display: flex; align-items: center; gap: 12px; }
+        .brand-icon { width: 42px; height: 42px; background: linear-gradient(135deg, #6366f1, #ec4899); border-radius: 12px; display: flex; align-items: center; justify-content: center; color: white; }
+        .brand-text h2 { color: white; font-size: 16px; font-weight: 700; }
+        .brand-text p { color: rgba(255,255,255,0.4); font-size: 11px; }
+        .nav-section { padding: 8px 12px; margin-bottom: 4px; }
+        .nav-label { font-size: 10px; color: rgba(255,255,255,0.3); text-transform: uppercase; letter-spacing: 1.5px; padding: 0 8px; margin-bottom: 6px; }
+        .nav-item { display: flex; align-items: center; gap: 12px; padding: 11px 12px; border-radius: 10px; color: rgba(255,255,255,0.6); text-decoration: none; font-size: 14px; font-weight: 500; transition: all 0.2s; margin-bottom: 2px; }
+        .nav-item:hover { background: rgba(255,255,255,0.08); color: white; }
+        .nav-item.active { background: linear-gradient(135deg, var(--primary), var(--primary-dark)); color: white; }
+        .nav-item .icon { width: 18px; height: 18px; flex-shrink: 0; }
+        .sidebar-footer { margin-top: auto; padding: 16px 12px; border-top: 1px solid rgba(255,255,255,0.08); }
+        .logout-btn { display: flex; align-items: center; gap: 12px; padding: 11px 12px; border-radius: 10px; color: rgba(255,255,255,0.6); font-size: 14px; width: 100%; background: none; border: none; cursor: pointer; }
+        .logout-btn:hover { background: rgba(239,68,68,0.15); color: #ef4444; }
+        .main { margin-left: 260px; flex: 1; padding: 32px; }
+        .topbar { margin-bottom: 28px; }
+        .topbar h1 { font-size: 24px; font-weight: 700; color: var(--text); display: flex; align-items: center; gap: 10px; }
+        .topbar p { color: var(--text-light); font-size: 14px; margin-top: 4px; }
+        .alert-success { background: #ecfdf5; color: #059669; padding: 12px 16px; border-radius: 10px; margin-bottom: 20px; font-size: 14px; display: flex; align-items: center; gap: 8px; border-left: 4px solid #10b981; }
+        .card { background: white; border-radius: var(--radius); padding: 32px; box-shadow: var(--shadow); max-width: 560px; }
+        .card-header { margin-bottom: 28px; padding-bottom: 20px; border-bottom: 2px solid var(--bg); }
+        .card-header h2 { font-size: 18px; font-weight: 700; color: var(--text); display: flex; align-items: center; gap: 8px; }
+        .card-header p { font-size: 14px; color: var(--text-light); margin-top: 4px; }
+        .form-group { margin-bottom: 24px; }
+        label { display: block; font-size: 13px; color: var(--text); margin-bottom: 8px; font-weight: 600; }
+        .input-wrap { position: relative; }
+        .input-icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--text-light); width: 18px; height: 18px; }
+        input { width: 100%; padding: 13px 14px 13px 44px; border: 2px solid var(--border); border-radius: 10px; font-size: 15px; outline: none; transition: border 0.2s; color: var(--text); }
+        input:focus { border-color: var(--primary); }
+        .input-hint { font-size: 12px; color: var(--text-light); margin-top: 6px; }
+        .btn { display: inline-flex; align-items: center; gap: 8px; padding: 13px 28px; background: linear-gradient(135deg, var(--primary), var(--primary-dark)); color: white; border: none; border-radius: 10px; font-size: 15px; font-weight: 600; cursor: pointer; }
+        .btn:hover { opacity: 0.9; }
     </style>
 </head>
 <body>
     <div class="sidebar">
-        <div class="brand">
-            <h2>⚙️ Diligent Mom</h2>
-            <p>Admin Panel</p>
+        <div class="sidebar-brand">
+            <div class="brand-logo">
+                <div class="brand-icon"><i data-lucide="heart" style="width:20px;height:20px;"></i></div>
+                <div class="brand-text"><h2>Diligent Mom</h2><p>Admin Panel</p></div>
+            </div>
         </div>
-        <a href="/admin/dashboard">📊 Dashboard</a>
-        <a href="/admin/parents">👩 Parents</a>
-        <a href="/admin/children">👶 Children</a>
-        <a href="/admin/payments">💳 Payments</a>
-        <a href="/admin/settings" class="active">⚙️ Settings</a>
-        <a href="/admin/activity">📋 Activity Logs</a>
-        <div class="logout">
+        <div class="nav-section">
+            <div class="nav-label">Main Menu</div>
+            <a href="/admin/dashboard" class="nav-item"><i data-lucide="layout-dashboard" class="icon"></i> Dashboard</a>
+            <a href="/admin/parents" class="nav-item"><i data-lucide="users" class="icon"></i> Parents</a>
+            <a href="/admin/children" class="nav-item"><i data-lucide="baby" class="icon"></i> Children</a>
+            <a href="/admin/payments" class="nav-item"><i data-lucide="credit-card" class="icon"></i> Payments</a>
+        </div>
+        <div class="nav-section">
+            <div class="nav-label">Reports & Settings</div>
+            <a href="/admin/report" class="nav-item"><i data-lucide="bar-chart-2" class="icon"></i> Daily Report</a>
+            <a href="/admin/activity" class="nav-item"><i data-lucide="activity" class="icon"></i> Activity Logs</a>
+            <a href="/admin/settings" class="nav-item active"><i data-lucide="settings" class="icon"></i> Settings</a>
+            <a href="/" class="nav-item"><i data-lucide="home" class="icon"></i> Home</a>
+        </div>
+        <div class="sidebar-footer">
             <form action="/admin/logout" method="POST">
                 @csrf
-                <button type="submit">🚪 Logout</button>
+                <button type="submit" class="logout-btn"><i data-lucide="log-out" style="width:18px;height:18px;"></i> Logout</button>
             </form>
         </div>
     </div>
 
     <div class="main">
         <div class="topbar">
-            <h1>⚙️ M-Pesa Settings</h1>
+            <h1><i data-lucide="settings" style="width:24px;height:24px;color:#6366f1;"></i> Settings</h1>
+            <p>Configure M-Pesa payment settings</p>
         </div>
 
         @if(session('success'))
-            <div class="success">{{ session('success') }}</div>
+            <div class="alert-success"><i data-lucide="check-circle" style="width:16px;height:16px;"></i> {{ session('success') }}</div>
         @endif
 
         <div class="card">
+            <div class="card-header">
+                <h2><i data-lucide="smartphone" style="width:18px;height:18px;color:#10b981;"></i> M-Pesa Configuration</h2>
+                <p>Update the M-Pesa receiving number and daily fee amount</p>
+            </div>
             <form action="/admin/settings" method="POST">
                 @csrf
-                <label>M-Pesa Receiving Number</label>
-                <input type="text" name="mpesa_number" value="{{ $mpesaNumber }}" placeholder="254712345678"/>
-                <p class="info">This is the number that receives payments from parents.</p>
-
-                <label>Daily Fee Amount (KSH)</label>
-                <input type="number" name="mpesa_amount" value="{{ $mpesaAmount }}" placeholder="1000"/>
-                <p class="info">This is the amount parents are charged per day.</p>
-
-                <button type="submit">Save Settings 💾</button>
+                <div class="form-group">
+                    <label>M-Pesa Receiving Number</label>
+                    <div class="input-wrap">
+                        <i data-lucide="phone" class="input-icon"></i>
+                        <input type="text" name="mpesa_number" value="{{ $mpesaNumber }}" placeholder="254712345678"/>
+                    </div>
+                    <p class="input-hint">This is the number that receives payments from parents via M-Pesa.</p>
+                </div>
+                <div class="form-group">
+                    <label>Daily Fee Amount (KSH)</label>
+                    <div class="input-wrap">
+                        <i data-lucide="banknote" class="input-icon"></i>
+                        <input type="number" name="mpesa_amount" value="{{ $mpesaAmount }}" placeholder="1000"/>
+                    </div>
+                    <p class="input-hint">This is the amount parents are charged per day.</p>
+                </div>
+                <button type="submit" class="btn">
+                    <i data-lucide="save" style="width:18px;height:18px;"></i>
+                    Save Settings
+                </button>
             </form>
         </div>
     </div>
+    <script>lucide.createIcons();</script>
 </body>
 </html>

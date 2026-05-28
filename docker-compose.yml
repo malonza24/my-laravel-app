@@ -1,8 +1,4 @@
-version: '3.8'
-
 services:
-
-  # PHP / Laravel App
   app:
     build:
       context: .
@@ -11,11 +7,17 @@ services:
     restart: unless-stopped
     working_dir: /var/www
     volumes:
-      - ./:/var/www
+      - .:/var/www
+      - /var/www/vendor
     networks:
-      - laravel_network
+      - laravel_internal
+    environment:
+      - APP_ENV=local
+    depends_on:
+      - mysql
+    security_opt:
+      - no-new-privileges:true
 
-  # NGINX Web Server
   nginx:
     image: nginx:alpine
     container_name: laravel_nginx
@@ -23,33 +25,52 @@ services:
     ports:
       - "8080:80"
     volumes:
-      - ./:/var/www
+      - .:/var/www
       - ./docker/nginx/nginx.conf:/etc/nginx/conf.d/default.conf
+    networks:
+      - laravel_internal
     depends_on:
       - app
-    networks:
-      - laravel_network
+    security_opt:
+      - no-new-privileges:true
 
-  # MySQL Database
   mysql:
     image: mysql:8.0
     container_name: laravel_mysql
     restart: unless-stopped
-    ports:
-      - "3306:3306"
     environment:
       MYSQL_DATABASE: laravel_db
-      MYSQL_ROOT_PASSWORD: root_password
       MYSQL_USER: laravel_user
       MYSQL_PASSWORD: laravel_password
+      MYSQL_ROOT_PASSWORD: root_password
     volumes:
       - mysql_data:/var/lib/mysql
     networks:
-      - laravel_network
+      - laravel_internal
+    # NO ports mapping - database not exposed to host
+    security_opt:
+      - no-new-privileges:true
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    container_name: laravel_phpmyadmin
+    restart: unless-stopped
+    ports:
+      - "8081:80"
+    environment:
+      PMA_HOST: mysql
+      PMA_USER: laravel_user
+      PMA_PASSWORD: laravel_password
+    networks:
+      - laravel_internal
+    depends_on:
+      - mysql
+
+networks:
+  laravel_internal:
+    driver: bridge
+    internal: false
 
 volumes:
   mysql_data:
-
-networks:
-  laravel_network:
-    driver: bridge
+    driver: local

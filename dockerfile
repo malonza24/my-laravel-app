@@ -1,39 +1,27 @@
-# Use official PHP 8.2 with FPM (FastCGI Process Manager)
 FROM php:8.2-fpm
 
-# Set working directory inside the container
-WORKDIR /var/www
-
-# Install system dependencies
 RUN apt-get update && apt-get install -y \
-    git \
-    curl \
-    libpng-dev \
-    libonig-dev \
-    libxml2-dev \
-    zip \
-    unzip
+    git curl libpng-dev libonig-dev libxml2-dev zip unzip \
+    libzip-dev libjpeg-dev libfreetype6-dev \
+    && docker-php-ext-configure gd --with-freetype --with-jpeg \
+    && docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd zip \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Clear cache
-RUN apt-get clean && rm -rf /var/lib/apt/lists/*
-
-# Install PHP extensions Laravel needs
-RUN docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd
-
-# Install Composer (PHP package manager)
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
-# Copy all project files into the container
-COPY . /var/www
+WORKDIR /var/www
 
-# Install Laravel dependencies
-RUN composer install --no-interaction --no-dev --optimize-autoloader
+COPY --chown=www-data:www-data . .
 
-# Set correct permissions for Laravel storage and cache
-RUN chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache
+RUN if [ -L public/storage ]; then rm public/storage; fi
 
-# Expose port 9000 for PHP-FPM
+RUN composer install --no-interaction --prefer-dist --optimize-autoloader
+
+RUN chown -R www-data:www-data /var/www \
+    && chmod -R 755 /var/www/storage \
+    && chmod -R 755 /var/www/bootstrap/cache
+
+USER www-data
+
 EXPOSE 9000
-
-# Start PHP-FPM server
 CMD ["php-fpm"]
